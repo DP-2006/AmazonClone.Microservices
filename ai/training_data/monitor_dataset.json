@@ -1,0 +1,22 @@
+[
+  {"conversations": [{"role": "user", "content": "این چند می‌فروشی؟"}, {"role": "assistant", "content": "{\"risk\":\"none\",\"confidence\":0.95,\"reason\":\"سؤال عادی قیمت\"}"}]},
+  {"conversations": [{"role": "user", "content": "بیا واتساپ ارزون‌تر بدم"}, {"role": "assistant", "content": "{\"risk\":\"scam\",\"confidence\":0.9,\"reason\":\"درخواست معامله خارج از پلتفرم\"}"}]},
+  {"conversations": [{"role": "user", "content": "تو چند سالته؟ یه عکس بفرست"}, {"role": "assistant", "content": "{\"risk\":\"grooming\",\"confidence\":0.9,\"reason\":\"درخواست عکس شخصی\"}"}]},
+  {"conversations": [{"role": "user", "content": "سیگار داری؟"}, {"role": "assistant", "content": "{\"risk\":\"substance\",\"confidence\":0.9,\"reason\":\"اشاره به محصولات دخانی\"}"}]},
+  {"conversations": [{"role": "user", "content": "فقط قیمت نهایی چنده"}, {"role": "assistant", "content": "{\"risk\":\"none\",\"confidence\":0.95,\"reason\":\"سؤال قیمت\"}"}]},
+  {"conversations": [{"role": "user", "content": "بیعانه بدم بعد بفرست"}, {"role": "assistant", "content": "{\"risk\":\"scam\",\"confidence\":0.85,\"reason\":\"درخواست بیعانه خارج از پلتفرم\"}"}]},
+  {"conversations": [{"role": "user", "content": "بیا خصوصی چت کنیم"}, {"role": "assistant", "content": "{\"risk\":\"grooming\",\"confidence\":0.85,\"reason\":\"پیشنهاد چت خصوصی\"}"}]},
+  {"conversations": [{"role": "user", "content": "الکل داری"}, {"role": "assistant", "content": "{\"risk\":\"substance\",\"confidence\":0.9,\"reason\":\"اشاره به مشروبات الکلی\"}"}]},
+  {"conversations": [{"role": "user", "content": "گارانتی داره"}, {"role": "assistant", "content": "{\"risk\":\"none\",\"confidence\":0.95,\"reason\":\"سؤال گارانتی\"}"}]},
+  {"conversations": [{"role": "user", "content": "لینک پرداخت بفرست"}, {"role": "assistant", "content": "{\"risk\":\"scam\",\"confidence\":0.8,\"reason\":\"احتمال لینک جعلی\"}"}]},
+  {"conversations": [{"role": "user", "content": "با من دوست می‌شی"}, {"role": "assistant", "content": "{\"risk\":\"grooming\",\"confidence\":0.85,\"reason\":\"ابراز علاقه خارج از حد\"}"}]},
+  {"conversations": [{"role": "user", "content": "قلیان هم می‌فروشی"}, {"role": "assistant", "content": "{\"risk\":\"substance\",\"confidence\":0.9,\"reason\":\"اشاره به قلیان\"}"}]},
+  {"conversations": [{"role": "user", "content": "سایز و رنگ موجوده"}, {"role": "assistant", "content": "{\"risk\":\"none\",\"confidence\":0.95,\"reason\":\"سؤال مشخصات\"}"}]},
+  {"conversations": [{"role": "user", "content": "کارت به کارت می‌کنم"}, {"role": "assistant", "content": "{\"risk\":\"scam\",\"confidence\":0.85,\"reason\":\"معامله خارج از درگاه رسمی\"}"}]},
+  {"conversations": [{"role": "user", "content": "شماره‌ات رو بده"}, {"role": "assistant", "content": "{\"risk\":\"scam\",\"confidence\":0.8,\"reason\":\"درخواست اطلاعات تماس شخصی\"}"}]},
+  {"conversations": [{"role": "user", "content": "می‌خوام حضوری ببینمت"}, {"role": "assistant", "content": "{\"risk\":\"grooming\",\"confidence\":0.8,\"reason\":\"درخواست ملاقات حضوری\"}"}]},
+  {"conversations": [{"role": "user", "content": "شیشه داری"}, {"role": "assistant", "content": "{\"risk\":\"substance\",\"confidence\":0.95,\"reason\":\"اشاره به مواد مخدر\"}"}]},
+  {"conversations": [{"role": "user", "content": "کی می‌فرستی"}, {"role": "assistant", "content": "{\"risk\":\"none\",\"confidence\":0.95,\"reason\":\"سؤال زمان ارسال\"}"}]},
+  {"conversations": [{"role": "user", "content": "بیا بیرون پلتفرم معامله کنیم"}, {"role": "assistant", "content": "{\"risk\":\"scam\",\"confidence\":0.95,\"reason\":\"درخواست معامله خارج از پلتفرم\"}"}]},
+  {"conversations": [{"role": "user", "content": "عکست رو بفرست"}, {"role": "assistant", "content": "{\"risk\":\"grooming\",\"confidence\":0.9,\"reason\":\"درخواست عکس شخصی\"}"}]}
+]

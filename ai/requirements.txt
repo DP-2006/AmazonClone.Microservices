@@ -1,0 +1,22 @@
+# === Core LLM & RAG ===
+ollama==0.4.7
+qdrant-client==1.12.1
+langchain==0.3.13
+langchain-community==0.3.13
+langchain-qdrant==0.2.0
+langchain-huggingface==0.1.2
+sentence-transformers==3.3.1
+
+# === Training (فقط روی 1080 Ti) ===
+unsloth==2024.12.4
+trl==0.13.0
+peft==0.14.0
+bitsandbytes==0.45.0
+accelerate==1.2.1
+transformers==4.47.1
+datasets==3.2.0
+
+# === Utilities ===
+python-dotenv==1.0.1
+pydantic==2.10.4
+httpx==0.28.1

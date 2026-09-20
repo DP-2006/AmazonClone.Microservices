@@ -1,27 +1,36 @@
 services:
+  # ===== Databases =====
   postgres:
     image: postgres:16-alpine
     container_name: amazonclone-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_MULTIPLE_DATABASES: catalog_db,identity_db,orders_db,notification_db
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
 
   redis:
     image: redis:7-alpine
     container_name: amazonclone-redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # ===== RabbitMQ =====
+  # نکته: RabbitMQ به‌صورت native روی سیستم نصب شده و روی پورت 5672 گوش می‌ده.
+  # پس نیازی به container نیست.
+  # اگه خواستی از Docker استفاده کنی، این بخش رو uncomment کن و native رو متوقف کن.
 
 volumes:
   postgres_data:
-
+  redis_data:
