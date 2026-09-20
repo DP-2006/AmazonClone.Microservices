@@ -44,7 +44,6 @@ public sealed class AuthController : ControllerBase
         if (!result.Succeeded)
             return BadRequest(result.Errors);
 
-        // اطمینان از وجود نقش Customer
         if (!await _roleManager.RoleExistsAsync("Customer"))
             await _roleManager.CreateAsync(new ApplicationRole("Customer"));
 
