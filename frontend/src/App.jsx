@@ -9,6 +9,7 @@ import Basket from './pages/Basket';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
+import SellerProducts from './pages/SellerProducts';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/seller/products" element={<ProtectedRoute><SellerProducts /></ProtectedRoute>} />
       </Routes>
     </>
   );

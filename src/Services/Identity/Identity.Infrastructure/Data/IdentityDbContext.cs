@@ -16,16 +16,23 @@ public sealed class IdentityDbContext
     {
         base.OnModelCreating(builder);
 
-        // ===== Users =====
         builder.Entity<ApplicationUser>(entity =>
         {
             entity.ToTable("users");
             entity.Property(x => x.FirstName).HasMaxLength(100).IsRequired();
             entity.Property(x => x.LastName).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.PostalCode).HasMaxLength(20);
+            entity.Property(x => x.Address).HasMaxLength(500);
+            entity.Property(x => x.City).HasMaxLength(100);
+            entity.Property(x => x.State).HasMaxLength(100);
+            entity.Property(x => x.Country).HasMaxLength(100);
+            entity.Property(x => x.BusinessName).HasMaxLength(200);
+            entity.Property(x => x.BusinessType).HasMaxLength(50);
+            entity.Property(x => x.BusinessDescription).HasMaxLength(2000);
+            entity.Property(x => x.BusinessWebsite).HasMaxLength(300);
             entity.HasIndex(x => x.Email).IsUnique();
         });
 
-        // ===== Roles و جداول Identity =====
         builder.Entity<ApplicationRole>(entity => entity.ToTable("roles"));
         builder.Entity<Microsoft.AspNetCore.Identity.IdentityUserRole<Guid>>(entity => entity.ToTable("user_roles"));
         builder.Entity<Microsoft.AspNetCore.Identity.IdentityUserClaim<Guid>>(entity => entity.ToTable("user_claims"));
@@ -33,19 +40,14 @@ public sealed class IdentityDbContext
         builder.Entity<Microsoft.AspNetCore.Identity.IdentityUserToken<Guid>>(entity => entity.ToTable("user_tokens"));
         builder.Entity<Microsoft.AspNetCore.Identity.IdentityRoleClaim<Guid>>(entity => entity.ToTable("role_claims"));
 
-        // ===== OtpCodes =====
         builder.Entity<OtpCode>(entity =>
         {
             entity.ToTable("otp_codes");
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Email).HasMaxLength(256).IsRequired();
             entity.Property(x => x.CodeHash).HasMaxLength(128).IsRequired();
-            entity.Property(x => x.ExpiresAt).IsRequired();
-            entity.Property(x => x.CreatedAt).IsRequired();
-
-            // Index برای جستجوی سریع
             entity.HasIndex(x => new { x.Email, x.CodeHash, x.IsUsed });
-            entity.HasIndex(x => x.ExpiresAt); // برای پاکسازی کدهای منقضی
+            entity.HasIndex(x => x.ExpiresAt);
         });
     }
 }

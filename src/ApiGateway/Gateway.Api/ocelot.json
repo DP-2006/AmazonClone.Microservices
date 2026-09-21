@@ -22,6 +22,13 @@
       "UpstreamHttpMethod": ["Get", "Post"]
     },
     {
+      "DownstreamPathTemplate": "/api/profile/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5002 }],
+      "UpstreamPathTemplate": "/api/profile/{everything}",
+      "UpstreamHttpMethod": ["Get", "Post", "Put", "Delete"]
+    },
+    {
       "DownstreamPathTemplate": "/api/orders/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5003 }],
@@ -41,9 +48,14 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5004 }],
       "UpstreamPathTemplate": "/api/basket/{everything}",
       "UpstreamHttpMethod": ["Get", "Post", "Put", "Delete"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/reviews/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5006 }],
+      "UpstreamPathTemplate": "/api/reviews/{everything}",
+      "UpstreamHttpMethod": ["Get", "Post", "Put", "Delete"]
     }
   ],
-  "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:5000"
-  }
+  "GlobalConfiguration": { "BaseUrl": "http://localhost:5000" }
 }
