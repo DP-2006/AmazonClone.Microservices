@@ -43,3 +43,22 @@ public sealed record PermissionListDto(
 
 public sealed record AssignUserPermissionsDto(
     Guid UserId, List<Guid> PermissionIds, DateTime? ExpiresAt = null);
+
+// ===== Password Policy =====
+public sealed record PasswordPolicyDto(
+    int MinPasswordLength,
+    bool RequireUppercase,
+    bool RequireDigit,
+    bool RequireLowercase,
+    bool RequireSpecialChar,
+    int? PasswordExpiryDays,
+    int? MaxLoginAttempts);
+
+public sealed record UpdatePasswordPolicyDto(
+    int MinPasswordLength,
+    bool RequireUppercase,
+    bool RequireDigit,
+    bool RequireLowercase,
+    bool RequireSpecialChar,
+    int? PasswordExpiryDays,
+    int? MaxLoginAttempts);

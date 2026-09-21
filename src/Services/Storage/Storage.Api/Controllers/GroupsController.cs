@@ -35,6 +35,7 @@ public sealed class GroupsController : ControllerBase
         return await _perm.HasPermissionAsync(UserId, code, ct);
     }
 
+    // ===== LIST =====
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken ct)
     {
@@ -51,6 +52,7 @@ public sealed class GroupsController : ControllerBase
         return Ok(groups);
     }
 
+    // ===== GET =====
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
     {
@@ -75,6 +77,7 @@ public sealed class GroupsController : ControllerBase
             perms));
     }
 
+    // ===== CREATE =====
     [HttpPost]
     public async Task<IActionResult> Create(CreateGroupDto dto, CancellationToken ct)
     {
@@ -94,6 +97,7 @@ public sealed class GroupsController : ControllerBase
         return Ok(new GroupListDto(group.Id, group.Name, group.Description, 0, 0, false, group.CreatedAt));
     }
 
+    // ===== UPDATE =====
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, UpdateGroupDto dto, CancellationToken ct)
     {
@@ -110,13 +114,10 @@ public sealed class GroupsController : ControllerBase
         group.UpdateDescription(dto.Description);
         await _db.SaveChangesAsync(ct);
 
-        await _logger.LogAsync(UserId, UserName, ActivityType.PermissionChange,
-            $"ویرایش گروه: {dto.Name}",
-            resourceType: "Group", resourceId: group.Id, ct: ct);
-
         return NoContent();
     }
 
+    // ===== DELETE =====
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
@@ -137,6 +138,7 @@ public sealed class GroupsController : ControllerBase
         return NoContent();
     }
 
+    // ===== ADD MEMBERS =====
     [HttpPost("{id:guid}/members")]
     public async Task<IActionResult> AddMembers(Guid id, AddMembersDto dto, CancellationToken ct)
     {
@@ -163,6 +165,7 @@ public sealed class GroupsController : ControllerBase
         return Ok(new { added });
     }
 
+    // ===== REMOVE MEMBER =====
     [HttpDelete("{id:guid}/members/{userId:guid}")]
     public async Task<IActionResult> RemoveMember(Guid id, Guid userId, CancellationToken ct)
     {
@@ -177,6 +180,7 @@ public sealed class GroupsController : ControllerBase
         return NoContent();
     }
 
+    // ===== SET PERMISSIONS =====
     [HttpPut("{id:guid}/permissions")]
     public async Task<IActionResult> SetPermissions(Guid id, SetGroupPermissionsDto dto, CancellationToken ct)
     {
@@ -198,5 +202,46 @@ public sealed class GroupsController : ControllerBase
             resourceType: "Group", resourceId: id, ct: ct);
 
         return Ok(new { count = dto.PermissionIds.Count });
+    }
+
+    // ===== GET PASSWORD POLICY =====
+    [HttpGet("{id:guid}/password-policy")]
+    public async Task<IActionResult> GetPasswordPolicy(Guid id, CancellationToken ct)
+    {
+        if (!IsAdmin) return Forbid();
+
+        var group = await _db.Groups.AsNoTracking().FirstOrDefaultAsync(g => g.Id == id, ct);
+        if (group is null) return NotFound();
+
+        return Ok(new PasswordPolicyDto(
+            group.MinPasswordLength, group.RequireUppercase, group.RequireDigit,
+            group.RequireLowercase, group.RequireSpecialChar,
+            group.PasswordExpiryDays, group.MaxLoginAttempts));
+    }
+
+    // ===== SET PASSWORD POLICY =====
+    [HttpPut("{id:guid}/password-policy")]
+    public async Task<IActionResult> SetPasswordPolicy(Guid id, UpdatePasswordPolicyDto dto, CancellationToken ct)
+    {
+        if (!await HasPerm("groups.edit", ct)) return Forbid();
+
+        var group = await _db.Groups.FirstOrDefaultAsync(g => g.Id == id, ct);
+        if (group is null) return NotFound();
+
+        group.SetPasswordPolicy(
+            dto.MinPasswordLength, dto.RequireUppercase, dto.RequireDigit,
+            dto.RequireLowercase, dto.RequireSpecialChar,
+            dto.PasswordExpiryDays, dto.MaxLoginAttempts);
+
+        await _db.SaveChangesAsync(ct);
+
+        await _logger.LogAsync(UserId, UserName, ActivityType.PermissionChange,
+            $"تغییر Password Policy گروه {group.Name}",
+            resourceType: "Group", resourceId: id, ct: ct);
+
+        return Ok(new PasswordPolicyDto(
+            group.MinPasswordLength, group.RequireUppercase, group.RequireDigit,
+            group.RequireLowercase, group.RequireSpecialChar,
+            group.PasswordExpiryDays, group.MaxLoginAttempts));
     }
 }

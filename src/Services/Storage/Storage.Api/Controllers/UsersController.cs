@@ -39,27 +39,24 @@ public sealed class UsersController : ControllerBase
         return await _perm.HasPermissionAsync(UserId, code, ct);
     }
 
-    // ===== GET: لیست کاربران با آمار =====
+    // ===== LIST =====
     [HttpGet]
     public async Task<IActionResult> List([FromQuery] string? search, CancellationToken ct)
     {
         if (!await HasPerm("users.view", ct)) return Forbid();
 
-        // ۱. از Identity لیست کاربران بگیر
         var authHeader = Request.Headers["Authorization"].ToString();
         var users = await _identity.ListUsersAsync(authHeader, ct);
         if (users.Count == 0) return Ok(new List<UserSummaryDto>());
 
         var ids = users.Select(u => u.Id).ToList();
 
-        // ۲. آمار فایل‌ها
         var fileStats = await _db.StoredFiles.AsNoTracking()
             .Where(f => !f.IsDeleted && ids.Contains(f.OwnerId))
             .GroupBy(f => f.OwnerId)
             .Select(g => new { UserId = g.Key, Count = g.Count(), TotalSize = g.Sum(f => f.FileSize) })
             .ToDictionaryAsync(x => x.UserId, ct);
 
-        // ۳. گروه‌ها
         var groupData = await _db.GroupMembers.AsNoTracking()
             .Where(m => ids.Contains(m.UserId))
             .Join(_db.Groups.AsNoTracking(), m => m.GroupId, g => g.Id,
@@ -70,14 +67,12 @@ public sealed class UsersController : ControllerBase
             .GroupBy(x => x.UserId)
             .ToDictionary(g => g.Key, g => g.Select(x => new GroupMembershipDto(x.GroupId, x.Name, x.JoinedAt)).ToList());
 
-        // ۴. آخرین فعالیت
         var activities = await _db.ActivityLogs.AsNoTracking()
             .Where(a => a.UserId != null && ids.Contains(a.UserId.Value))
             .GroupBy(a => a.UserId!.Value)
             .Select(g => new { UserId = g.Key, LastAt = g.Max(a => a.CreatedAt) })
             .ToDictionaryAsync(x => x.UserId, x => x.LastAt, ct);
 
-        // ۵. برای هر کاربر، DTO بساز
         var result = new List<UserSummaryDto>();
         foreach (var u in users)
         {
@@ -103,7 +98,7 @@ public sealed class UsersController : ControllerBase
         return Ok(result.OrderBy(u => u.FullName).ToList());
     }
 
-    // ===== GET: جزئیات =====
+    // ===== GET DETAILS =====
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
     {
@@ -139,7 +134,7 @@ public sealed class UsersController : ControllerBase
         });
     }
 
-    // ===== POST: مسدود کردن =====
+    // ===== BLOCK =====
     [HttpPost("{id:guid}/block")]
     public async Task<IActionResult> Block(Guid id, CancellationToken ct)
     {
@@ -157,7 +152,7 @@ public sealed class UsersController : ControllerBase
         return Ok(new { message = "کاربر مسدود شد" });
     }
 
-    // ===== POST: رفع مسدودی =====
+    // ===== UNBLOCK =====
     [HttpPost("{id:guid}/unblock")]
     public async Task<IActionResult> Unblock(Guid id, CancellationToken ct)
     {
@@ -174,7 +169,7 @@ public sealed class UsersController : ControllerBase
         return Ok(new { message = "کاربر فعال شد" });
     }
 
-    // ===== POST: پیام دادن =====
+    // ===== MESSAGE =====
     [HttpPost("{id:guid}/message")]
     public async Task<IActionResult> SendMessage(Guid id, SendUserMessageDto dto, CancellationToken ct)
     {
@@ -190,7 +185,7 @@ public sealed class UsersController : ControllerBase
         return Ok(new { message = "پیام ارسال شد", notificationId = notif.Id });
     }
 
-    // ===== GET: خلاصه فعالیت =====
+    // ===== ACTIVITY SUMMARY =====
     [HttpGet("{id:guid}/activity-summary")]
     public async Task<IActionResult> ActivitySummary(Guid id, CancellationToken ct)
     {
@@ -215,5 +210,78 @@ public sealed class UsersController : ControllerBase
                 a.Metadata, a.CreatedAt)).ToList());
 
         return Ok(summary);
+    }
+
+    // ===== BULK: BLOCK =====
+    [HttpPost("bulk/block")]
+    public async Task<IActionResult> BulkBlock(BulkBlockDto dto, CancellationToken ct)
+    {
+        if (!await HasPerm("users.block", ct)) return Forbid();
+
+        var authHeader = Request.Headers["Authorization"].ToString();
+        var success = 0;
+        var errors = new List<string>();
+
+        foreach (var uid in dto.UserIds.Distinct())
+        {
+            if (uid == UserId) { errors.Add($"{uid}: نمی‌توانید خودتان را تغییر دهید"); continue; }
+            try
+            {
+                var ok = await _identity.SetBlockedAsync(uid, dto.Block, authHeader, ct);
+                if (ok) success++;
+                else errors.Add($"{uid}: ناموفق");
+            }
+            catch (Exception ex) { errors.Add($"{uid}: {ex.Message}"); }
+        }
+
+        await _logger.LogAsync(UserId, UserName,
+            dto.Block ? ActivityType.UserBlocked : ActivityType.UserUnblocked,
+            $"عملیات گروهی: {success} کاربر {(dto.Block ? "مسدود" : "فعال")}",
+            resourceType: "User", ct: ct);
+
+        return Ok(new BulkResultDto(success, errors.Count, errors));
+    }
+
+    // ===== BULK: ASSIGN GROUP =====
+    [HttpPost("bulk/assign-group")]
+    public async Task<IActionResult> BulkAssignGroup(BulkAssignRoleDto dto, CancellationToken ct)
+    {
+        if (!await HasPerm("groups.manage_members", ct)) return Forbid();
+
+        var group = await _db.Groups.Include(g => g.Members)
+            .FirstOrDefaultAsync(g => g.Id == dto.RoleId, ct);
+        if (group is null) return NotFound("گروه یافت نشد");
+
+        var success = 0;
+        var errors = new List<string>();
+
+        foreach (var uid in dto.UserIds.Distinct())
+        {
+            try
+            {
+                if (group.Members.Any(m => m.UserId == uid)) { errors.Add($"{uid}: قبلاً عضو بود"); continue; }
+                _db.GroupMembers.Add(new GroupMember(group.Id, uid, uid.ToString()[..8], UserId));
+                success++;
+            }
+            catch (Exception ex) { errors.Add($"{uid}: {ex.Message}"); }
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        await _logger.LogAsync(UserId, UserName, ActivityType.PermissionChange,
+            $"افزودن گروهی {success} کاربر به گروه {group.Name}",
+            resourceType: "Group", resourceId: group.Id, ct: ct);
+
+        return Ok(new BulkResultDto(success, errors.Count, errors));
+    }
+
+    // ===== BULK: CHECK GROUP MEMBERS =====
+    [HttpGet("bulk/check-group/{groupId:guid}")]
+    public async Task<IActionResult> CheckGroupMembers(Guid groupId, CancellationToken ct)
+    {
+        if (!await HasPerm("groups.view", ct)) return Forbid();
+
+        var count = await _db.GroupMembers.CountAsync(m => m.GroupId == groupId, ct);
+        return Ok(new { groupId, memberCount = count });
     }
 }

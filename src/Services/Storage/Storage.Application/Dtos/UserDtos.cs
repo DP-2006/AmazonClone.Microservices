@@ -18,3 +18,14 @@ public sealed record UserActivitySummaryDto(
     Guid UserId, int LoginCount, int UploadCount,
     int DownloadCount, int DeleteCount, DateTime? LastActivityAt,
     List<ActivityLogDto> RecentActivities);
+
+// ===== Bulk Operations =====
+public sealed record BulkUserIdsDto(List<Guid> UserIds);
+
+public sealed record BulkAssignRoleDto(Guid RoleId, List<Guid> UserIds);
+
+public sealed record BulkPasswordDto(List<Guid> UserIds, string NewPassword);
+
+public sealed record BulkBlockDto(List<Guid> UserIds, bool Block);
+
+public sealed record BulkResultDto(int Success, int Failed, List<string> Errors);
