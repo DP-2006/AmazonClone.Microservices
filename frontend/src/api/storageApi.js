@@ -61,3 +61,43 @@ export const storageApi = {
 };
 
 export default storageApi;
+
+// ===== Activity Logs =====
+storageApi.activitySearch = (filter) => api.post('/api/storage/activity/search', filter);
+storageApi.activityStats = () => api.get('/api/storage/activity/stats');
+storageApi.activityGet = (id) => api.get(`/api/storage/activity/${id}`);
+storageApi.activityExport = (filter) => api.post('/api/storage/activity/export', filter, {
+  responseType: 'blob',
+});
+storageApi.activityClear = (daysOld = 30) => api.post(`/api/storage/activity/clear?daysOld=${daysOld}`);
+
+// ===== Notifications =====
+storageApi.notifications = (unreadOnly) => api.get('/api/storage/notifications', { params: { unreadOnly } });
+storageApi.unreadCount = () => api.get('/api/storage/notifications/unread-count');
+storageApi.markRead = (id) => api.post(`/api/storage/notifications/${id}/read`);
+storageApi.markAllNotificationsRead = () => api.post('/api/storage/notifications/read-all');
+storageApi.deleteNotification = (id) => api.delete(`/api/storage/notifications/${id}`);
+
+// ===== Activity Logs =====
+storageApi.activitySearch = (filter) => api.post('/api/storage/activity/search', filter);
+storageApi.activityStats = () => api.get('/api/storage/activity/stats');
+storageApi.activityGet = (id) => api.get(`/api/storage/activity/${id}`);
+storageApi.activityExport = (filter) => api.post('/api/storage/activity/export', filter, {
+  responseType: 'blob',
+});
+storageApi.activityClear = (daysOld = 30) => api.post(`/api/storage/activity/clear?daysOld=${daysOld}`);
+
+// ===== Notifications =====
+storageApi.notifications = (unreadOnly) => api.get('/api/storage/notifications', { params: { unreadOnly } });
+storageApi.unreadCount = () => api.get('/api/storage/notifications/unread-count');
+storageApi.markRead = (id) => api.post(`/api/storage/notifications/${id}/read`);
+storageApi.markAllNotificationsRead = () => api.post('/api/storage/notifications/read-all');
+storageApi.deleteNotification = (id) => api.delete(`/api/storage/notifications/${id}`);
+
+// ===== Password Policy =====
+storageApi.getPasswordPolicy = (groupId) => api.get(`/api/storage/groups/${groupId}/password-policy`);
+storageApi.updatePasswordPolicy = (groupId, data) => api.put(`/api/storage/groups/${groupId}/password-policy`, data);
+
+// ===== Bulk =====
+storageApi.bulkBlock = (userIds, block) => api.post('/api/storage/users/bulk/block', { userIds, block });
+storageApi.bulkAssignGroup = (roleId, userIds) => api.post('/api/storage/users/bulk/assign-group', { roleId, userIds });

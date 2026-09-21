@@ -10,6 +10,8 @@ export default function GroupsTab() {
   const [selected, setSelected] = useState(null);
   const [selectedPerms, setSelectedPerms] = useState([]);
   const [newMemberId, setNewMemberId] = useState('');
+  const [policy, setPolicy] = useState(null);
+  const [activeTab, setActiveTab] = useState('members');
 
   const load = async () => {
     setLoading(true);
@@ -51,9 +53,14 @@ export default function GroupsTab() {
 
   const openGroup = async (id) => {
     try {
-      const r = await storageApi.group(id);
-      setSelected(r.data);
-      setSelectedPerms(r.data.permissions.map(p => p.id));
+      const [g, p] = await Promise.all([
+        storageApi.group(id),
+        storageApi.getPasswordPolicy(id),
+      ]);
+      setSelected(g.data);
+      setSelectedPerms(g.data.permissions.map(p => p.id));
+      setPolicy(p.data);
+      setActiveTab('members');
     } catch { alert('خطا در بارگذاری'); }
   };
 
@@ -63,6 +70,15 @@ export default function GroupsTab() {
       setMsg('✅ دسترسی‌ها ذخیره شد');
       setSelected(null);
       load();
+    } catch (e) {
+      setMsg('❌ خطا');
+    }
+  };
+
+  const savePolicy = async () => {
+    try {
+      await storageApi.updatePasswordPolicy(selected.id, policy);
+      setMsg('✅ Password Policy ذخیره شد');
     } catch (e) {
       setMsg('❌ خطا');
     }
@@ -142,43 +158,124 @@ export default function GroupsTab() {
         <div style={overlay} onClick={() => setSelected(null)}>
           <div style={modal} onClick={e => e.stopPropagation()}>
             <h3>{selected.name}</h3>
-            <p style={{ fontSize: 13, color: '#666' }}>{selected.description}</p>
+            <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>{selected.description}</p>
 
-            <h4 style={{ marginTop: 20 }}>👥 اعضا ({selected.members.length})</h4>
-            <div style={{ display: 'flex', gap: 8, marginTop: 8, marginBottom: 12 }}>
-              <input placeholder="User ID (Guid)" value={newMemberId}
-                onChange={e => setNewMemberId(e.target.value)} style={{...inp, flex: 1}} />
-              <button onClick={addMember} style={btnY}>افزودن</button>
-            </div>
-            <div style={{ maxHeight: 150, overflow: 'auto', background: '#f8f8f8', padding: 8, borderRadius: 4 }}>
-              {selected.members.length === 0 && <p style={{ fontSize: 12, color: '#999' }}>هیچ عضوی نیست</p>}
-              {selected.members.map(m => (
-                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', padding: 4, fontSize: 13 }}>
-                  <span>{m.username}</span>
-                  <button onClick={() => removeMember(m.userId)} style={btnSm}>✖</button>
-                </div>
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid #eee', marginBottom: 16 }}>
+              {[
+                { id: 'members', label: `👥 اعضا (${selected.members.length})` },
+                { id: 'permissions', label: `🔑 دسترسی‌ها (${selectedPerms.length})` },
+                { id: 'policy', label: '🔒 Password Policy' },
+              ].map(t => (
+                <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
+                  padding: '8px 16px', border: 'none', cursor: 'pointer',
+                  background: activeTab === t.id ? '#f0f0f0' : 'transparent',
+                  borderBottom: activeTab === t.id ? '2px solid #FF9900' : '2px solid transparent',
+                  fontWeight: activeTab === t.id ? 'bold' : 'normal', fontSize: 13,
+                }}>{t.label}</button>
               ))}
             </div>
 
-            <h4 style={{ marginTop: 20 }}>🔑 دسترسی‌ها</h4>
-            <div style={{ maxHeight: 300, overflow: 'auto', border: '1px solid #eee', borderRadius: 4, padding: 12 }}>
-              {Object.entries(permsByCategory).map(([cat, perms]) => (
-                <div key={cat} style={{ marginBottom: 12 }}>
-                  <b style={{ fontSize: 13, color: '#232f3e' }}>{cat}</b>
-                  {perms.map(p => (
-                    <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 4, fontSize: 13 }}>
-                      <input type="checkbox" checked={selectedPerms.includes(p.id)}
-                        onChange={() => togglePerm(p.id)} />
-                      <span>{p.name} <code style={{ fontSize: 11, color: '#888' }}>{p.code}</code></span>
+            {/* Members Tab */}
+            {activeTab === 'members' && (
+              <div>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  <input placeholder="User ID (Guid)" value={newMemberId}
+                    onChange={e => setNewMemberId(e.target.value)} style={{...inp, flex: 1}} />
+                  <button onClick={addMember} style={btnY}>افزودن</button>
+                </div>
+                <div style={{ maxHeight: 300, overflow: 'auto', background: '#f8f8f8', padding: 8, borderRadius: 4 }}>
+                  {selected.members.length === 0 && <p style={{ fontSize: 12, color: '#999', padding: 8 }}>هیچ عضوی نیست</p>}
+                  {selected.members.map(m => (
+                    <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', padding: 6, fontSize: 13 }}>
+                      <span>{m.username}</span>
+                      <button onClick={() => removeMember(m.userId)} style={btnSm}>✖</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Permissions Tab */}
+            {activeTab === 'permissions' && (
+              <div>
+                <div style={{ maxHeight: 400, overflow: 'auto', border: '1px solid #eee', borderRadius: 4, padding: 12 }}>
+                  {Object.entries(permsByCategory).map(([cat, perms]) => (
+                    <div key={cat} style={{ marginBottom: 16 }}>
+                      <b style={{ fontSize: 13, color: '#232f3e', display: 'block', marginBottom: 6 }}>{cat}</b>
+                      {perms.map(p => (
+                        <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 4, fontSize: 13 }}>
+                          <input type="checkbox" checked={selectedPerms.includes(p.id)}
+                            onChange={() => togglePerm(p.id)} />
+                          <span>{p.name} <code style={{ fontSize: 11, color: '#888' }}>{p.code}</code></span>
+                        </label>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Password Policy Tab */}
+            {activeTab === 'policy' && policy && (
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>
+                      حداقل طول رمز
+                    </label>
+                    <input type="number" min="4" max="64" value={policy.minPasswordLength}
+                      onChange={e => setPolicy({...policy, minPasswordLength: parseInt(e.target.value)})}
+                      style={inp} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>
+                      انقضا (روز) — خالی = بدون انقضا
+                    </label>
+                    <input type="number" value={policy.passwordExpiryDays || ''}
+                      onChange={e => setPolicy({...policy, passwordExpiryDays: e.target.value ? parseInt(e.target.value) : null})}
+                      style={inp} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>
+                      حداکثر تلاش ناموفق
+                    </label>
+                    <input type="number" value={policy.maxLoginAttempts || ''}
+                      onChange={e => setPolicy({...policy, maxLoginAttempts: e.target.value ? parseInt(e.target.value) : null})}
+                      style={inp} />
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 16 }}>
+                  {[
+                    { key: 'requireUppercase', label: 'حداقل یک حرف بزرگ (A-Z)' },
+                    { key: 'requireLowercase', label: 'حداقل یک حرف کوچک (a-z)' },
+                    { key: 'requireDigit', label: 'حداقل یک عدد (0-9)' },
+                    { key: 'requireSpecialChar', label: 'حداقل یک کاراکتر خاص (!@#$)' },
+                  ].map(item => (
+                    <label key={item.key} style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: 10, background: '#f8f8f8', borderRadius: 6, marginBottom: 8,
+                      cursor: 'pointer', fontSize: 13,
+                    }}>
+                      <input type="checkbox" checked={policy[item.key]}
+                        onChange={() => setPolicy({...policy, [item.key]: !policy[item.key]})} />
+                      {item.label}
                     </label>
                   ))}
                 </div>
-              ))}
-            </div>
 
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-              <button onClick={() => setSelected(null)} style={btnG}>لغو</button>
-              <button onClick={savePerms} style={btnY}>💾 ذخیره</button>
+                <button onClick={savePolicy} style={{...btnY, marginTop: 12, width: '100%'}}>
+                  💾 ذخیره Password Policy
+                </button>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
+              <button onClick={() => setSelected(null)} style={btnG}>بستن</button>
+              {activeTab === 'permissions' && (
+                <button onClick={savePerms} style={btnY}>💾 ذخیره دسترسی‌ها</button>
+              )}
             </div>
           </div>
         </div>
@@ -187,7 +284,7 @@ export default function GroupsTab() {
   );
 }
 
-const inp = { padding: 10, border: '1px solid #ccc', borderRadius: 4 };
+const inp = { padding: 10, border: '1px solid #ccc', borderRadius: 4, width: '100%' };
 const btnY = { padding: '10px 16px', background: '#FFD814', border: '1px solid #FCD200', borderRadius: 4, cursor: 'pointer', fontWeight: 'bold' };
 const btnG = { padding: '10px 16px', background: '#f0f0f0', border: 'none', borderRadius: 4, cursor: 'pointer' };
 const btnSm = { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 };
