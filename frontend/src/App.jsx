@@ -10,6 +10,9 @@ import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import SellerProducts from './pages/SellerProducts';
+import Chat from './pages/Chat';
+import MyStorage from './pages/storage/MyStorage';
+import AdminPanel from './pages/storage/AdminPanel';
 
 export default function App() {
   return (
@@ -25,6 +28,10 @@ export default function App() {
         <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/seller/products" element={<ProtectedRoute><SellerProducts /></ProtectedRoute>} />
+        <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+        <Route path="/chat/:roomId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+        <Route path="/storage" element={<ProtectedRoute><MyStorage /></ProtectedRoute>} />
+        <Route path="/storage/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       </Routes>
     </>
   );

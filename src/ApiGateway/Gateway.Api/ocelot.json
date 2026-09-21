@@ -55,6 +55,28 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5006 }],
       "UpstreamPathTemplate": "/api/reviews/{everything}",
       "UpstreamHttpMethod": ["Get", "Post", "Put", "Delete"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/chat/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5007 }],
+      "UpstreamPathTemplate": "/api/chat/{everything}",
+      "UpstreamHttpMethod": ["Get", "Post", "Put", "Delete"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/storage/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5008 }],
+      "UpstreamPathTemplate": "/api/storage/{everything}",
+      "UpstreamHttpMethod": ["Get", "Post", "Put", "Delete"]
+    },
+    {
+      "DownstreamPathTemplate": "/hubs/chat",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5007 }],
+      "UpstreamPathTemplate": "/hubs/chat",
+      "UpstreamHttpMethod": ["Get", "Post", "Options"],
+      "DownstreamHttpVersion": "2.0"
     }
   ],
   "GlobalConfiguration": { "BaseUrl": "http://localhost:5000" }
