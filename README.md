@@ -1,153 +1,387 @@
-# AmazonClone — Microservices (.NET 9)
+# AmazonClone Microservices
 
-A microservices-based e-commerce backend built with **.NET 9**, **Clean Architecture**, **EF Core + PostgreSQL**, **Redis**, and **Ocelot API Gateway**.
+A production-oriented microservices e-commerce platform built with .NET 9, PostgreSQL, Redis, RabbitMQ, Ocelot, and a React frontend. The solution is designed to showcase clean architecture, service decomposition, API gateway patterns, authentication, and event-driven communication in a realistic marketplace scenario.
 
-## 🏗️ Architecture
+This repository combines:
 
-## 🚀 Quick Start
+- A .NET 9 backend built as independent services
+- An API Gateway for centralized routing
+- JWT-based authentication and authorization
+- PostgreSQL for relational persistence
+- Redis for cart/session-like data
+- RabbitMQ for asynchronous messaging
+- A Vite + React storefront UI
+- Docker support for local infrastructure orchestration
 
-### Prerequisites
+## Architecture Overview
+
+The system is organized into multiple bounded services connected through a single entry point:
+
+```text
+                  ┌──────────────────────┐
+                  │   React Frontend     │
+                  │   (Vite / React)     │
+                  └───────────┬──────────┘
+                              │ HTTP
+                              ▼
+                  ┌──────────────────────┐
+                  │   API Gateway        │
+                  │   Ocelot / ASP.NET   │
+                  └───────────┬──────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌────────────────┐   ┌──────────────────┐   ┌──────────────────┐
+│ Catalog        │   │ Identity         │   │ Orders           │
+│ Service        │   │ Service          │   │ Service          │
+│ - Products     │   │ - Auth           │   │ - Orders         │
+│ - Categories   │   │ - JWT            │   │ - Payments       │
+└──────┬─────────┘   └──────┬───────────┘   └──────┬───────────┘
+       │                     │                      │
+       └─────────────────────┼──────────────────────┘
+                             │
+                             ▼
+                   ┌──────────────────────┐
+                   │ Shared Dependencies  │
+                   │ PostgreSQL / Redis   │
+                   │ RabbitMQ / Storage   │
+                   └──────────────────────┘
+```
+
+## Core Features
+
+- Product catalog management
+- Category-based product organization
+- User registration and login
+- JWT authentication and role-aware access
+- Basket and cart operations
+- Order placement and processing
+- Messaging-based integration between services
+- API aggregation through Ocelot
+- Dockerized database infrastructure
+- Modern React frontend for user interaction
+
+## Tech Stack
+
+### Backend
+- .NET 9
+- ASP.NET Core Web API
+- Entity Framework Core
+- PostgreSQL
+- Redis
+- RabbitMQ (MassTransit)
+- Ocelot API Gateway
+- FluentValidation
+- JWT / Bearer authentication
+
+### Frontend
+- React 19
+- Vite
+- React Router
+- Axios
+- SignalR client support for chat
+
+### DevOps / Local Setup
+- Docker Compose
+- .NET CLI
+- npm / Node.js
+
+## Repository Structure
+
+```text
+.
+├── README.md
+├── docker-compose.yml
+├── global.json
+├── docker/
+│   ├── init-db.sh
+│   └── init-multiple-databases.sh
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── vite.config.js
+├── src/
+│   ├── ApiGateway/
+│   │   └── Gateway.Api/
+│   ├── BuildingBlocks/
+│   │   └── Messaging/
+│   └── Services/
+│       ├── Basket/
+│       ├── Catalog/
+│       ├── Chat/
+│       ├── Identity/
+│       ├── Orders/
+│       ├── Reviews/
+│       └── Storage/
+└── AmazonClone.sln
+```
+
+## Prerequisites
+
+Before running the project locally, make sure you have:
+
 - .NET 9 SDK
+- Node.js 18+ or 20+
+- npm
 - Docker + Docker Compose
+- RabbitMQ installed and running locally on port 5672
 
-### 1. Start infrastructure
+> Note: In this repository, PostgreSQL and Redis are started with Docker Compose. RabbitMQ is expected to be available on localhost:5672 (either as a local installation or a Docker container).
+
+## Local Infrastructure Setup
+
+Start the required infrastructure services:
+
 ```bash
 docker compose up -d
-sleep 15
-docker exec amazonclone-postgres psql -U postgres -c "CREATE DATABASE catalog_db;"
-docker exec amazonclone-postgres psql -U postgres -c "CREATE DATABASE identity_db;"
-docker exec amazonclone-postgres psql -U postgres -c "CREATE DATABASE orders_db;"
-Apply migratins
-dotnet ef database update --project src/Services/Catalog/Catalog.Infrastructure --startup-project src/Services/Catalog/Catalog.Api
-dotnet ef database update --project src/Services/Identity/Identity.Infrastructure --startup-project src/Services/Identity/Identity.Api
-dotnet ef database update --project src/Services/Orders/Orders.Infrastructure --startup-project src/Services/Orders/Orders.Api
-Run all service 
-bash ~/stop-all.sh
+```
 
+This starts:
 
+- PostgreSQL on `localhost:5433`
+- Redis on `localhost:6379`
 
+The Docker setup creates databases for the application:
 
-🔐 Authentication
-JWT-based. Get token from Identity:
+- `catalog_db`
+- `identity_db`
+- `orders_db`
+- `notification_db`
 
-bash
-curl -X POST http://localhost:5002/api/auth/register \
+## Running the Backend Services
+
+From the repository root, restore and build the solution:
+
+```bash
+dotnet restore
+-dotnet build
+```
+
+Run the gateway and the individual service APIs:
+
+```bash
+dotnet run --project src/ApiGateway/Gateway.Api
+```
+
+```bash
+dotnet run --project src/Services/Catalog/Catalog.Api
+```
+
+```bash
+dotnet run --project src/Services/Identity/Identity.Api
+```
+
+```bash
+dotnet run --project src/Services/Basket/Basket.Api
+```
+
+```bash
+dotnet run --project src/Services/Orders/Orders.Api
+```
+
+```bash
+dotnet run --project src/Services/Chat/Chat.Api
+```
+
+If the additional services exist in your local branch, run them similarly:
+
+```bash
+dotnet run --project src/Services/Reviews/Reviews.Api
+dotnet run --project src/Services/Storage/Storage.Api
+```
+
+The API Gateway is configured at:
+
+- `http://localhost:5000`
+
+The service-specific ports are mapped in the gateway configuration and typically include:
+
+- Catalog: `5001`
+- Identity: `5002`
+- Orders: `5003`
+- Basket: `5004`
+- Reviews: `5006`
+- Chat: `5007`
+- Storage: `5008`
+
+## Running the Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Then open:
+
+- `http://localhost:5173`
+
+## Authentication Flow
+
+The Identity service secures requests with JWT tokens.
+
+### Register user
+
+```bash
+curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"user@test.com","password":"Test123","firstName":"Ali","lastName":"Ahmadi"}'
-Use token:
+  -d '{
+    "email": "user@test.com",
+    "password": "Test123",
+    "firstName": "John",
+    "lastName": "Doe"
+  }'
+```
 
-text
-Authorization: Bearer <token>
-🧪 End-to-End Test
-bash
-# Login
-TOKEN=$(curl -s -X POST http://localhost:5002/api/auth/login \
+### Login
+
+```bash
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@test.com",
+    "password": "Test123"
+  }'
+```
+
+### Use the token
+
+```bash
+curl http://localhost:5000/api/products \
+  -H "Authorization: Bearer <your-token>"
+```
+
+## Example End-to-End Scenario
+
+```bash
+# 1. Login
+TOKEN=$(curl -s -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"user@test.com","password":"Test123"}' | jq -r .accessToken)
 
-# Create category
-CATEGORY_ID=$(curl -s -X POST http://localhost:5001/api/categories \
+# 2. Create a category
+CATEGORY_ID=$(curl -s -X POST http://localhost:5000/api/categories \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{"name":"Phones","slug":"phones"}' | jq -r .id)
 
-# Create product
-PRODUCT_ID=$(curl -s -X POST http://localhost:5001/api/products \
+# 3. Create a product
+PRODUCT_ID=$(curl -s -X POST http://localhost:5000/api/products \
   -H "Content-Type: application/json" \
-  -d "{\"categoryId\":\"$CATEGORY_ID\",\"name\":\"iPhone 15\",\"slug\":\"iphone-15\",\"price\":999.99,\"currency\":\"USD\"}" | jq -r .id)
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"categoryId":"'$CATEGORY_ID'","name":"iPhone 15","slug":"iphone-15","price":999.99,"currency":"USD"}' | jq -r .id)
 
-# Add to basket
-curl -X POST http://localhost:5004/api/basket/items \
+# 4. Add to basket
+curl -X POST http://localhost:5000/api/basket/items \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"productId\":\"$PRODUCT_ID\",\"productName\":\"iPhone 15\",\"unitPrice\":999.99,\"quantity\":2}"
+  -d '{"productId":"'$PRODUCT_ID'","productName":"iPhone 15","unitPrice":999.99,"quantity":2}'
+```
 
-# Create order
-curl -X POST http://localhost:5003/api/orders \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"items\":[{\"productId\":\"$PRODUCT_ID\",\"productName\":\"iPhone 15\",\"unitPrice\":999.99,\"quantity\":2}],\"address\":{\"street\":\"123 Main\",\"city\":\"Tehran\",\"country\":\"Iran\"},\"currency\":\"USD\"}"
-🏛️ Project Structure
-text
-src/
-├── ApiGateway/Gateway.Api              # Ocelot API Gateway
-├── Services/
-│   ├── Catalog/                        # Products + Categories
-│   │   ├── Catalog.Domain              # Entities
-│   │   ├── Catalog.Application         # DTOs + Validators
-│   │   ├── Catalog.Infrastructure      # EF Core + DbContext
-│   │   └── Catalog.Api                 # Controllers + Program
-│   ├── Identity/                       # Users + Roles + JWT
-│   ├── Orders/                         # Orders + Items + Payments
-│   └── Basket/                         # Redis-based shopping cart
-└── BuildingBlocks/                     # Shared utilities
-🛠️ Tech Stack
-.NET 9 — ASP.NET Core Web API
+## Configuration Notes
 
-EF Core 9 + Npgsql — PostgreSQL ORM
+### ASP.NET configuration
+The application uses `appsettings.json` for runtime configuration. Example values include:
 
-FluentValidation — Input validation
+- PostgreSQL connection strings
+- JWT issuer, audience, secret, and expiry
+- Allowed hosts
 
-JWT — Authentication
+### Example database settings
+```json
+{
+  "ConnectionStrings": {
+    "CatalogDatabase": "Host=localhost;Port=5433;Database=catalog_db;Username=postgres;Password=postgres"
+  },
+  "Jwt": {
+    "Issuer": "AmazonClone",
+    "Audience": "AmazonClone.Client",
+    "Secret": "YOUR_LONG_SECRET_KEY_HERE",
+    "ExpiryMinutes": 60
+  }
+}
+```
 
-Redis — Basket storage
+## Gateway Routing
 
-Ocelot — API Gateway
+The Ocelot gateway exposes a unified API surface. Key routes include:
 
-PostgreSQL 16 — Database
+- `/api/categories`
+- `/api/products`
+- `/api/auth`
+- `/api/profile`
+- `/api/orders`
+- `/api/payments`
+- `/api/basket`
+- `/api/reviews`
+- `/api/chat`
+- `/api/storage`
 
-Docker — Infrastructure
+Base URL for all API requests through the gateway:
 
-📝 License
-MIT
+```text
+http://localhost:5000
+```
 
-text
+## Development Guidelines
+
+This project follows a clean separation of concerns across application layers:
+
+- Domain layer: entities and business rules
+- Application layer: DTOs, validators, and use cases
+- Infrastructure layer: EF Core, database access, external integrations
+- API layer: HTTP controllers and entry points
+
+This pattern keeps the services maintainable and testable as they grow.
+
+## Troubleshooting
+
+### PostgreSQL not starting
+```bash
+docker compose ps
+docker logs amazonclone-postgres
+```
+
+### RabbitMQ connection issues
+Ensure RabbitMQ is installed and listening on:
+
+```text
+amqp://localhost:5672
+```
+
+### JWT errors
+Validate that the secret in the Identity service matches the expected JWT secret and that the token is correctly sent in the `Authorization` header.
+
+### Frontend not connecting to API
+Check that the gateway is running at `http://localhost:5000` and that the frontend is calling the correct base URL.
+
+## Contributing
+
+Contributions are welcome. If you want to improve the project:
+
+1. Fork the repository
+2. Create a feature branch
+3. Implement your changes
+4. Run validation and build checks
+5. Submit a pull request with a clear description
+
+## License
+
+This project is distributed under the MIT license unless otherwise specified.
+
+## Summary
+
+AmazonClone Microservices is a practical example of a modular, cloud-friendly e-commerce backend built with .NET and modern API patterns. It demonstrates service segmentation, gateway-based routing, authentication, data persistence, messaging, and an end-user frontend experience.
+
+If you are learning distributed systems, microservices architecture, or enterprise .NET patterns, this repository is an excellent hands-on project for exploring real-world integration design.
 
 ---
 
-## ۴. پاک کردن فایل‌های زائد
+If you want, I can also generate:
 
-```bash
-cd ~/Downloads/amazon-clone
-
-# پاک کردن Migration های تکراری (اگه هست)
-ls src/Services/*/*/Migrations/ 2>/dev/null
-
-# پاک کردن فایل‌های موقت
-rm -rf /tmp/gen_*.sh
-rm -rf /tmp/cat_setup.sh
-۵. تست نهایی — کل flow از Gateway
-bash
-# از طریق Gateway (پورت 5000) — نقطه ورود واحد
-
-# ۱. ثبت‌نام
-curl -s -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"final@test.com","password":"Test123","firstName":"Final","lastName":"Test"}' | jq
-
-# ۲. لاگین
-TOKEN=$(curl -s -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"final@test.com","password":"Test123"}' | jq -r .accessToken)
-
-# ۳. محصولات
-curl -s http://localhost:5000/api/products | jq
-
-# ۴. سبد
-curl -s http://localhost:5000/api/basket -H "Authorization: Bearer $TOKEN" | jq
-
-# ۵. سفارش‌ها
-curl -s http://localhost:5000/api/orders -H "Authorization: Bearer $TOKEN" | jq
-🎯 چک‌لیست نهایی
-کار	وضعیت
-PostgreSQL + Redis	✅
-Catalog (Products + Categories)	✅
-Identity (Users + JWT)	✅
-Orders (Orders + Payments)	✅
-Basket (Redis)	✅
-Gateway (Ocelot)	✅
-Migrations	✅
-End-to-End Test	✅
-README	✅
-.gitignore	✅
-docker-compose	✅
-
+- a more premium GitHub-style README with badges and screenshots
+- a Turkish version of the README
+- a repository landing page / project description for LinkedIn and GitHub
+- a production-ready architecture diagram in Mermaid format
