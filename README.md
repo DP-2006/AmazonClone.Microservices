@@ -371,17 +371,3 @@ Contributions are welcome. If you want to improve the project:
 
 This project is distributed under the MIT license unless otherwise specified.
 
-## Summary
-
-AmazonClone Microservices is a practical example of a modular, cloud-friendly e-commerce backend built with .NET and modern API patterns. It demonstrates service segmentation, gateway-based routing, authentication, data persistence, messaging, and an end-user frontend experience.
-
-If you are learning distributed systems, microservices architecture, or enterprise .NET patterns, this repository is an excellent hands-on project for exploring real-world integration design.
-
----
-
-If you want, I can also generate:
-
-- a more premium GitHub-style README with badges and screenshots
-- a Turkish version of the README
-- a repository landing page / project description for LinkedIn and GitHub
-- a production-ready architecture diagram in Mermaid format
